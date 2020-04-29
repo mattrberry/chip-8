@@ -1,0 +1,13 @@
+name: chip-8
+version: 0.1.0
+
+authors:
+  - Matthew Berry <me@mattrb.com>
+
+targets:
+  chip-8:
+    main: src/chip-8.cr
+
+crystal: 0.34.0
+
+license: MIT
