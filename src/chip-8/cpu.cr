@@ -68,6 +68,15 @@ class CPU
   end
 
   def emulate_cycle : Nil
+    while event = @display.window.poll_event
+      case event
+      when SF::Event::Closed
+        @display.window.close
+        puts "window closed"
+        exit 0
+      end
+    end
+
     opcode = read_opcode
     process_opcode opcode
   end

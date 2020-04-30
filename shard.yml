@@ -8,6 +8,11 @@ targets:
   chip-8:
     main: src/chip-8.cr
 
+dependencies:
+  crsfml:
+    github: oprypin/crsfml
+    version: 2.5.1
+
 crystal: 0.34.0
 
 license: MIT
