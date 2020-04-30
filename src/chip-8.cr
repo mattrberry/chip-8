@@ -1,4 +1,5 @@
 require "./chip-8/cpu"
+require "./chip-8/display"
 
 # TODO: Write documentation for `Chip::8`
 module Chip8
@@ -16,9 +17,12 @@ module Chip8
     rom = Bytes.new 0xfff - 0x200
     File.open(ARGV[0]) { |file| file.read rom }
 
-    cpu = CPU.new rom
+    display = Display.new
+    cpu = CPU.new rom, display
     cpu.run
   end
 end
 
-Chip8.run
+unless PROGRAM_NAME.includes?("crystal-run-spec")
+  Chip8.run
+end
