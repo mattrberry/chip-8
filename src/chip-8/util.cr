@@ -19,3 +19,11 @@ def repeat(hz : Int, in_fiber : Bool, &block)
     repeat hz, &block
   end
 end
+
+def generate_tone(frequency : Int, volume : Int, duration : Float, sample_rate = 44100)
+  amplitude = (volume.to_f / 100) * Int16::MAX
+  increment = frequency / sample_rate
+  samples = sample_rate * duration
+  raw = Array(Int16).new(samples.to_i) { |i| (amplitude * Math.sin(i * increment * 2 * Math::PI)).to_i16 }
+  SF::Sound.new(SF::SoundBuffer.from_samples raw, 1, sample_rate)
+end
