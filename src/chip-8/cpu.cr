@@ -9,6 +9,7 @@ class CPU
   property sound_timer : UInt8
   property stack : Array(UInt16)
   property sp : UInt16
+  property keys : Array(Bool)
 
   @fontset = Array(UInt8){
     0xF0, 0x90, 0x90, 0x90, 0xF0, # 0
@@ -29,6 +30,13 @@ class CPU
     0xF0, 0x80, 0xF0, 0x80, 0x80, # F
   }
 
+  @keymap = Hash(SF::Keyboard::Key, UInt8){
+    SF::Keyboard::Num1 => 0x1, SF::Keyboard::Num2 => 0x2, SF::Keyboard::Num3 => 0x3, SF::Keyboard::Num4 => 0xC,
+    SF::Keyboard::Q => 0x4, SF::Keyboard::W => 0x5, SF::Keyboard::E => 0x6, SF::Keyboard::R => 0x7,
+    SF::Keyboard::A => 0x7, SF::Keyboard::S => 0x8, SF::Keyboard::D => 0x9, SF::Keyboard::F => 0xE,
+    SF::Keyboard::Z => 0xA, SF::Keyboard::X => 0x0, SF::Keyboard::C => 0xB, SF::Keyboard::V => 0xF,
+  }
+
   def initialize(@rom : Bytes, @display : Display)
     @memory = Array.new 4096, 0_u8
     @v = Array.new 16, 0_u8
@@ -38,6 +46,7 @@ class CPU
     @sound_timer = 0_u8
     @stack = Array.new 16, 0_u16
     @sp = 0_u16
+    @keys = Array.new 16, false
 
     self.reset
   end
@@ -51,6 +60,7 @@ class CPU
     @sound_timer = 0_u8
     @stack = Array.new 16, 0_u16
     @sp = 0_u16
+    @keys = Array.new 16, false
 
     @fontset.each_with_index do |byte, i|
       @memory[i] = byte
@@ -67,16 +77,38 @@ class CPU
     repeat hz: 500 { emulate_cycle }
   end
 
-  def emulate_cycle : Nil
+  def handle_events : UInt8?
     while event = @display.window.poll_event
       case event
       when SF::Event::Closed
         @display.window.close
         puts "window closed"
         exit 0
+      when SF::Event::KeyPressed
+        if @keymap.has_key? event.code
+          @keys[@keymap[event.code]] = true
+          @keymap[event.code]
+        end
+      when SF::Event::KeyReleased
+        if @keymap.has_key? event.code
+          @keys[@keymap[event.code]] = false
+          @keymap[event.code]
+        end
       end
     end
+  end
 
+  def get_keypress : UInt8
+    loop do
+      res = handle_events
+      if !res.nil?
+        return res
+      end
+    end
+  end
+
+  def emulate_cycle : Nil
+    handle_events
     opcode = read_opcode
     process_opcode opcode
   end
@@ -137,10 +169,10 @@ class CPU
     when {0xB, _, _, _}     then @pc = @v[0].to_u16 + nnn
     when {0xC, _, _, _}     then @v[x] = (Random.rand * 256).to_u8 & nn
     when {0xD, _, _, _}     then @v[0xF] = @display.add_sprite @v[x], @v[y], @memory[@i, n]
-    when {0xE, _, 0x9, 0xE} then nil      # todo
-    when {0xE, _, 0xA, 0x1} then @pc += 2 # todo
+    when {0xE, _, 0x9, 0xE} then @pc += 2 if @keys[@v[x]]
+    when {0xE, _, 0xA, 0x1} then @pc += 2 if !@keys[@v[x]]
     when {0xF, _, 0x0, 0x7} then @v[x] = @delay_timer
-    when {0xF, _, 0x0, 0xA} then nil # todo
+    when {0xF, _, 0x0, 0xA} then @v[x] = get_keypress
     when {0xF, _, 0x1, 0x5} then @delay_timer = @v[x]
     when {0xF, _, 0x1, 0x8} then @sound_timer = @v[x]
     when {0xF, _, 0x1, 0xE} then @i &+= @v[x]
