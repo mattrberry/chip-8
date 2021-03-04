@@ -1,6 +1,6 @@
-version: 1.0
+version: 2.0
 shards:
-  crsfml:
-    github: oprypin/crsfml
-    version: 2.5.1
+  sdl:
+    git: https://github.com/ysbaddaden/sdl.cr.git
+    version: 0.1.0+git.commit.b674fbaaf9ff8505b3e76cbd43528d2f0cfdbdc2
 

@@ -1,15 +1,15 @@
 require "./util"
 
 class CPU
-  property memory : Array(UInt8)
-  property v : Array(UInt8)
-  property i : UInt16
-  property pc : UInt16
-  property delay_timer : UInt8
-  property sound_timer : UInt8
-  property stack : Array(UInt16)
-  property sp : UInt16
-  property keys : Array(Bool)
+  property memory : Array(UInt8) = Array.new 4096, 0_u8
+  property v : Array(UInt8) = Array.new 16, 0_u8
+  property i : UInt16 = 0_u16
+  property pc : UInt16 = 0x200_u16
+  property delay_timer : UInt8 = 0_u8
+  property sound_timer : UInt8 = 0_u8
+  property stack : Array(UInt16) = Array.new 16, 0_u16
+  property sp : UInt16 = 0_u16
+  property keys : Array(Bool) = Array.new 16, false
 
   @fontset = Array(UInt8){
     0xF0, 0x90, 0x90, 0x90, 0xF0, # 0
@@ -30,24 +30,14 @@ class CPU
     0xF0, 0x80, 0xF0, 0x80, 0x80, # F
   }
 
-  @keymap = Hash(SF::Keyboard::Key, UInt8){
-    SF::Keyboard::Num1 => 0x1, SF::Keyboard::Num2 => 0x2, SF::Keyboard::Num3 => 0x3, SF::Keyboard::Num4 => 0xC,
-    SF::Keyboard::Q => 0x4, SF::Keyboard::W => 0x5, SF::Keyboard::E => 0x6, SF::Keyboard::R => 0x7,
-    SF::Keyboard::A => 0x7, SF::Keyboard::S => 0x8, SF::Keyboard::D => 0x9, SF::Keyboard::F => 0xE,
-    SF::Keyboard::Z => 0xA, SF::Keyboard::X => 0x0, SF::Keyboard::C => 0xB, SF::Keyboard::V => 0xF,
+  @keymap : Hash(LibSDL::Keycode, UInt8) = Hash(LibSDL::Keycode, UInt8){
+    LibSDL::Keycode::KEY_1 => 0x1, LibSDL::Keycode::KEY_2 => 0x2, LibSDL::Keycode::KEY_3 => 0x3, LibSDL::Keycode::KEY_4 => 0xC,
+    LibSDL::Keycode::Q => 0x4, LibSDL::Keycode::W => 0x5, LibSDL::Keycode::E => 0x6, LibSDL::Keycode::R => 0xD,
+    LibSDL::Keycode::A => 0x7, LibSDL::Keycode::S => 0x8, LibSDL::Keycode::D => 0x9, LibSDL::Keycode::F => 0xE,
+    LibSDL::Keycode::Z => 0xA, LibSDL::Keycode::X => 0x0, LibSDL::Keycode::C => 0xB, LibSDL::Keycode::V => 0xF,
   }
 
   def initialize(@rom : Bytes, @display : Display)
-    @memory = Array.new 4096, 0_u8
-    @v = Array.new 16, 0_u8
-    @i = 0_u16
-    @pc = 0x200_u16
-    @delay_timer = 0_u8
-    @sound_timer = 0_u8
-    @stack = Array.new 16, 0_u16
-    @sp = 0_u16
-    @keys = Array.new 16, false
-
     self.reset
   end
 
@@ -78,21 +68,15 @@ class CPU
   end
 
   def handle_events : UInt8?
-    while event = @display.window.poll_event
+    while event = SDL::Event.poll
       case event
-      when SF::Event::Closed
-        @display.window.close
+      when SDL::Event::Quit
         puts "window closed"
         exit 0
-      when SF::Event::KeyPressed
-        if @keymap.has_key? event.code
-          @keys[@keymap[event.code]] = true
-          @keymap[event.code]
-        end
-      when SF::Event::KeyReleased
-        if @keymap.has_key? event.code
-          @keys[@keymap[event.code]] = false
-          @keymap[event.code]
+      when SDL::Event::Keyboard
+        if @keymap.has_key? event.sym
+          @keys[@keymap[event.sym]] = event.pressed?
+          @keymap[event.sym]
         end
       end
     end

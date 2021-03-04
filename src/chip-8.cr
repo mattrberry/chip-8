@@ -1,3 +1,4 @@
+require "sdl"
 require "./chip-8/cpu"
 require "./chip-8/display"
 
@@ -16,6 +17,9 @@ module Chip8
 
     rom = Bytes.new 0xfff - 0x200
     File.open(ARGV[0]) { |file| file.read rom }
+
+    SDL.init(SDL::Init::VIDEO | SDL::Init::AUDIO | SDL::Init::JOYSTICK)
+    at_exit { SDL.quit }
 
     display = Display.new
     cpu = CPU.new rom, display

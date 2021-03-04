@@ -9,9 +9,8 @@ targets:
     main: src/chip-8.cr
 
 dependencies:
-  crsfml:
-    github: oprypin/crsfml
-    version: 2.5.1
+  sdl:
+    github: ysbaddaden/sdl.cr
 
 crystal: 0.34.0
 
